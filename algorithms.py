@@ -8,7 +8,7 @@ from typing import Callable, Tuple
 from tqdm import trange
 import time
 
-ef nstep_sarsa(
+def nstep_sarsa(
     env: gym.Env,
     num_steps: int,
     gamma: float,
