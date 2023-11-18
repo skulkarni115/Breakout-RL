@@ -30,12 +30,14 @@ def nstep_sarsa(
     
     #Initialize Q Arbitrarily
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
+    
     steps = []
     
     #Loop for each episode
-    for i in range(num_steps):
+    for i in trange(num_steps):
         #Initialize and store S0 and make sure its not terminal
         S,_ = env.reset()
+        S = S.tobytes()
         #Select and store an action A0
         A = e_greedy(Q,S,epsilon)
         #T <- inf
@@ -50,6 +52,7 @@ def nstep_sarsa(
             if t < T:
                 #Take action At
                 next_S,R,done, _,_ = env.step(A)
+                next_S = next_S.tobytes()
                 #observe R t+1 and S t+1
                 states.append(next_S)
                 rewards.append(R)
@@ -88,7 +91,7 @@ def nstep_sarsa(
             A = next_A
             
             t+=1
-    return Q,steps
+    return steps
 
 
 def argmax(arr: Sequence[float]) -> int:
