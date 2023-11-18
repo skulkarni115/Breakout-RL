@@ -32,6 +32,7 @@ def nstep_sarsa(
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
     
     steps = []
+    total_re = []
     
     #Loop for each episode
     for i in trange(num_steps):
@@ -61,6 +62,7 @@ def nstep_sarsa(
                 if done:
                     #T <- t+1
                     T = t+1
+                    total_re.append(sum(rewards))
                 #else:
                 else:
                     #Select and store an action At+1
@@ -84,6 +86,7 @@ def nstep_sarsa(
             #if tau  = T-1 then break
             if tau == (T-1):
                 steps.append(t)
+                total_re.append(sum(rewards))
                 break
                 
             #state = next state, action = next action
@@ -91,7 +94,9 @@ def nstep_sarsa(
             A = next_A
             
             t+=1
-    return steps
+            
+
+    return steps,rewards
 
 
 def argmax(arr: Sequence[float]) -> int:
@@ -138,3 +143,51 @@ def e_greedy(Q: defaultdict, state, epsilon: float) -> Callable:
 
 
     return action
+
+def sarsa(env: gym.Env, num_steps: int, gamma: float, epsilon: float, step_size: float):
+    """SARSA algorithm.
+
+    Args:
+        env (gym.Env): a Gym API compatible environment
+        num_steps (int): Number of steps
+        gamma (float): Discount factor of MDP
+        epsilon (float): epsilon for epsilon greedy
+        step_size (float): step size
+    """
+    # TODO (Done?)
+    #initialize Q arbitrarily
+    Q = defaultdict(lambda: np.zeros(env.action_space.n))
+    steps = []
+    tot_re = []
+    #loop for each episode
+    for x in trange(num_steps):
+        rewards = []
+        S,_ = env.reset()
+        S = S.tobytes()
+        #Choose A from S using policy derived from Q (e greedy)
+        A = e_greedy(Q,S,epsilon)
+        i = 0
+        while True:
+            i +=1
+
+        #for each step in episode:
+            #take action A and observe R and S'
+            next_S,R,done, _,_ = env.step(A)
+            next_S = next_S.tobytes()
+            rewards.append(R)
+            #Choose A' From S' using policy derived from Q (e-greedy)
+            next_A = e_greedy(Q,next_S,epsilon)
+            #update Q
+            target = R + gamma*Q[next_S][next_A]
+            Q[S][A] += step_size*(target-Q[S][A])
+            
+            #s = S'; A = A'
+            S = next_S
+            A = next_A
+            #until S is terminal (check if episode is done); if done then break loop
+            if done:
+                steps.append(i)
+                tot_re.append(sum(rewards))
+                break
+                                                              
+    return steps,tot_re
