@@ -62,7 +62,6 @@ def nstep_sarsa(
                 if done:
                     #T <- t+1
                     T = t+1
-                    total_re.append(sum(rewards))
                 #else:
                 else:
                     #Select and store an action At+1
@@ -86,7 +85,6 @@ def nstep_sarsa(
             #if tau  = T-1 then break
             if tau == (T-1):
                 steps.append(t)
-                total_re.append(sum(rewards))
                 break
                 
             #state = next state, action = next action
@@ -94,9 +92,9 @@ def nstep_sarsa(
             A = next_A
             
             t+=1
-            
+        total_re.append(sum(rewards))    
 
-    return steps,rewards
+    return steps,total_re
 
 
 def argmax(arr: Sequence[float]) -> int:
@@ -213,12 +211,15 @@ def q_learning(
     #initialize Q arbitrarily
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
     steps = []
+    tot_re = []
     
     #loop for each episode
     for x in trange(num_steps):
         #Initialize S
         S,_ = env.reset()
+        S = S.tobytes()
         i = 0
+        rewards = []
         #Loop for each step of the episode:
         while True:
             i +=1
@@ -227,6 +228,8 @@ def q_learning(
             
             #take action A and observe S' and R
             next_S,R,done, _,_ = env.step(A)
+            next_S = next_S.tobytes()
+            rewards.append(R)
             
             #Q(S,A) <- Q(S,A) + step_size*[R + gamma*max(a)Q(S',a) - Q(S,A)]
             target = R + gamma*max(Q[next_S])
@@ -237,8 +240,9 @@ def q_learning(
             #until S is terminal
             if done:
                 steps.append(i)
+                tot_re.append(sum(rewards))
                 break
-    return Q, steps
+    return steps,tot_re
 
 def exp_sarsa(
     env: gym.Env,
@@ -261,19 +265,24 @@ def exp_sarsa(
     #initialize Q arbitrarily
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
     steps = []
+    tot_re = []
     #loop for each episode
     for x in trange(num_steps):
         S,_ = env.reset()
+        S = S.tobytes()
     
         #Choose A from S using policy derived from Q (e greedy)
         A = e_greedy(Q,S,epsilon)
         i = 0
+        rewards = []
         while True:
             i +=1
 
         #for each step in episode:
             #take action A and observe R and S'
             next_S,R,done, _,_ = env.step(A)
+            rewards.append(R)
+            next_S = next_S.tobytes()
             #Choose A' From S' using policy derived from Q (e-greedy)
             next_A = e_greedy(Q,next_S,epsilon)
             
@@ -292,9 +301,10 @@ def exp_sarsa(
             #until S is terminal (check if episode is done); if done then break loop
             if done:
                 steps.append(i)
+                tot_re.append(sum(rewards))
                 break
                                                               
-    return Q,steps
+    return steps, tot_re
 
 def on_policy_mc_control_epsilon_soft(
     env: gym.Env, num_episodes: int, gamma: float, epsilon: float
